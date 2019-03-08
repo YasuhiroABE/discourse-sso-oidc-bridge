@@ -181,7 +181,7 @@ def create_app(config=None):
         attribute_map = app.config.get('USERINFO_SSO_MAP')
 
         sso_attributes = {}
-        userinfo = session['userinfo']
+        userinfo = session['id_token']
 
         # Check if the provided userinfo should be used to set information to be
         # passed to discourse. Do it by checking if the userinfo field is...
@@ -212,7 +212,7 @@ def create_app(config=None):
         # Check if we got the required attributes
         for required_attribute in REQUIRED_ATTRIBUTES:
             if not sso_attributes.get(required_attribute):
-                app.logger.info(f'/sso/auth -> 403: {required_attribute} not found in userinfo: ' + json.dumps(session['userinfo']))
+                app.logger.info(f'/sso/auth -> 403: {required_attribute} not found in userinfo: ' + json.dumps(session['id_token']))
                 abort(403)
 
         # All systems are go!
@@ -221,6 +221,9 @@ def create_app(config=None):
         # Construct the response inner query parameters
         query = session['discourse_nonce']
         for sso_attribute_key, sso_attribute_value in sso_attributes.items():
+            # key:'nonce' was already registered by session['discourse_nonce'].
+            if sso_attribute_key == "nonce":
+              continue
             query += f'&{sso_attribute_key}={quote(str(sso_attribute_value))}'
         app.logger.debug('Query string to return: %s', query)
 
